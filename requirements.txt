@@ -1,0 +1,4 @@
+djangorestframework
+Django>=4.0
+djangorestframework-simplejwt
+django-filter
