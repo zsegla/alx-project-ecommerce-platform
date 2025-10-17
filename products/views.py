@@ -31,6 +31,31 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = CategorySerializer(cats, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='low_stock')
+    def low_stock(self, request):
+        """Return products with stock_quantity less than or equal to a threshold.
+
+        Query params:
+        - threshold (int): maximum stock quantity to include. Defaults to 5.
+        """
+        try:
+            threshold = int(request.query_params.get('threshold', 5))
+        except (TypeError, ValueError):
+            return Response({'detail': 'Invalid threshold parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = Product.objects.filter(stock_quantity__lte=threshold).order_by('stock_quantity')
+
+        # If the user is not staff, only return products that are public/readable (SAFE_METHODS already allowed by default permissions)
+        # For now, allow any authenticated or anonymous users to view low stock products.
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()

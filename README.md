@@ -187,3 +187,4 @@ API endpoints (partial)
 - PUT /api/products/{id}/ (owner or staff)
 - DELETE /api/products/{id}/ (owner or staff)
 - GET /api/products/categories/ (list categories)
+- GET /api/products/low_stock/?threshold={n} → List products with stock_quantity less than or equal to `n` (default `5`). Supports pagination.
