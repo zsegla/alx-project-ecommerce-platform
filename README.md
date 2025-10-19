@@ -1,4 +1,158 @@
-🏬 E-commerce Product API
+# E-commerce Product API
+
+A Django REST Framework backend for managing products, categories, users and simple e-commerce features. This repository contains the code for the BE Capstone project and the API implemented so far: authentication (JWT), product CRUD, search and filtering, reviews, wishlist, and basic user management.
+
+## Features (implemented)
+
+- JWT Authentication (login, refresh, logout via token blacklist)
+- User registration and profile endpoints
+- Product CRUD with ownership checks and admin override
+- Product search and filtering (including price range and stock availability)
+- Category read endpoints
+- Product reviews (create/list) and basic review model
+- Wishlist: add/list/remove items for authenticated users
+- Pagination on list endpoints
+
+## Tech stack
+
+- Python / Django
+- Django REST Framework
+- djangorestframework-simplejwt (JWT)
+- django-filter
+- SQLite (development)
+
+## Installation
+
+Clone the repo:
+
+```bash
+git clone https://github.com/zsegla/alx-project-ecommerce-platform.git
+cd alx-project-ecommerce-platform
+```
+
+Create & activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run migrations and create a superuser:
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+Start the development server:
+
+```bash
+python manage.py runserver
+```
+
+## API Endpoints
+
+Base URL: http://127.0.0.1:8000/
+
+Auth
+
+- POST /api/auth/register/ — Register a new user
+- POST /api/auth/login/ — Obtain JWT access + refresh tokens
+- POST /api/auth/token/refresh/ — Refresh access token
+- POST /api/auth/logout/ — Blacklist refresh token (body: {"refresh": "<token>"})
+
+Users
+
+- GET /api/users/ — List users (admin only)
+- GET /api/users/{id}/ — Retrieve user profile (owner or staff)
+- PATCH/PUT /api/users/{id}/ — Update user profile (owner or staff)
+
+Products
+
+- GET /api/products/ — List products (supports search, filters, ordering, pagination)
+  - Query params: `search=`, `category__id=`, `min_price=`, `max_price=`, `in_stock=true|false`, `ordering=` (e.g. `ordering=-created_at`), `page=`
+- POST /api/products/ — Create product (auth required)
+- GET /api/products/{id}/ — Retrieve product details
+- PUT /api/products/{id}/ — Update product (owner or staff)
+- DELETE /api/products/{id}/ — Delete product (owner or staff)
+
+Categories
+
+- GET /api/categories/ — List categories
+- GET /api/categories/{id}/ — Category details
+
+Reviews
+
+- GET /api/products/{product_pk}/reviews/ — List reviews for a product
+- POST /api/products/{product_pk}/reviews/ — Create a review for a product (auth required)
+
+Wishlist
+
+- GET /api/wishlist/ — List current user's wishlist items
+- POST /api/wishlist/ — Add a product to wishlist (body: {"product": <product_id>})
+- GET /api/wishlist/{id}/ — Get wishlist item (owner or staff)
+- DELETE /api/wishlist/{id}/ — Remove wishlist item (owner or staff)
+
+## Example usage
+
+1. Login to obtain tokens:
+
+POST /api/auth/login/
+
+```json
+{ "username": "alice", "password": "pass1234" }
+```
+
+Response:
+
+```json
+{ "refresh": "<refresh>", "access": "<access>" }
+```
+
+Use the access token for authenticated requests:
+
+Header: Authorization: Bearer <access>
+
+2. Create a product (authenticated):
+
+POST /api/products/
+
+```json
+{
+  "name": "Sample",
+  "description": "Example",
+  "price": "10.00",
+  "category_id": 1,
+  "stock_quantity": 20,
+  "image_url": "https://..."
+}
+```
+
+3. Add to wishlist:
+
+POST /api/wishlist/
+
+```json
+{ "product": 3 }
+```
+
+## Roadmap (remaining tasks)
+
+- Orders & stock management (order model, transactional stock reduction, admin order update)
+- Image upload & media settings (Pillow + MEDIA config)
+- Tests & deployment prep (Procfile, gunicorn, automated tests)
+
+## Notes
+
+- The DRF browsable API is available in development when `DEBUG=True`.
+- If you want me to implement the next roadmap item (orders, image uploads, tests/deploy), tell me which one to pick and I'll add it next.
+  🏬 E-commerce Product API
 
 A Django-based API for managing products, categories and users in an e-commerce platform. Built with Django REST Framework and JWT authentication. This repo is the BE Capstone implementation that focuses on product management, search, pagination and user-authenticated CRUD.
 
