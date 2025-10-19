@@ -1,9 +1,29 @@
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from .models import Product, Category
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, filters as df_filters
+from .models import Product, Category, Review
 from .serializers import ProductSerializer, CategorySerializer
+from .serializers import ReviewSerializer
+from rest_framework import mixins
+
+from .serializers import WishlistSerializer
+from .models import Wishlist
+
+
+class ProductFilter(FilterSet):
+    min_price = df_filters.NumberFilter(field_name='price', lookup_expr='gte')
+    max_price = df_filters.NumberFilter(field_name='price', lookup_expr='lte')
+    in_stock = df_filters.BooleanFilter(method='filter_in_stock')
+
+    class Meta:
+        model = Product
+        fields = ['category__id', 'min_price', 'max_price', 'in_stock']
+
+    def filter_in_stock(self, queryset, name, value):
+        if value:
+            return queryset.filter(stock_quantity__gt=0)
+        return queryset
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -18,7 +38,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category__id']
+    filterset_class = ProductFilter
     search_fields = ['name', 'description', 'category__name']
     ordering_fields = ['price', 'created_at']
 
@@ -30,6 +50,39 @@ class ProductViewSet(viewsets.ModelViewSet):
         cats = Category.objects.all()
         serializer = CategorySerializer(cats, many=True)
         return Response(serializer.data)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_serializer_class(self):
+        from .serializers import ReviewSerializer
+        return ReviewSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        product_id = self.kwargs.get('product_pk')
+        if product_id:
+            return Review.objects.filter(product_id=product_id)
+        return Review.objects.all()
+
+
+class WishlistViewSet(viewsets.ModelViewSet):
+    queryset = Wishlist.objects.all()
+    serializer_class = WishlistSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # users see only their wishlist unless staff
+        if self.request.user.is_staff:
+            return Wishlist.objects.all()
+        return Wishlist.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['get'], url_path='low_stock')
     def low_stock(self, request):

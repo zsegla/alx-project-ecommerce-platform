@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Product, Category
 
+from .models import Review
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -27,4 +29,30 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'price': 'Price must be a non-negative number.'})
         if stock is None or stock < 0:
             raise serializers.ValidationError({'stock_quantity': 'Stock must be a non-negative integer.'})
+        return data
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at', 'updated_at']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError('Rating must be between 1 and 5')
+        return value
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+    product_detail = ProductSerializer(source='product', read_only=True)
+
+    class Meta:
+        model = __import__('products.models', fromlist=['Wishlist']).Wishlist
+        fields = ['id', 'user', 'product', 'product_detail', 'added_at']
+
+    def validate(self, data):
+        # basic validation placeholder
         return data
